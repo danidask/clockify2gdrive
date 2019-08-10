@@ -81,7 +81,7 @@ def get_reports_summary(month, year):
         projects.add(project)
         engineers.add(username)
         registers.append((project, username, duration))
-    return projects, engineers, registers
+    return list(projects), list(engineers), registers
 
 
 def hours_from_duration(pt):
