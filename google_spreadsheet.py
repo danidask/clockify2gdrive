@@ -12,10 +12,11 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapi
 
 class GoogleSheet:
     def __init__(self, title):
-        self.authenticate()
-        self.sheet_id = self.create_sheet(title)
+        self._authenticate()
+        self.service = build('sheets', 'v4', credentials=self.creds)
+        self._create_spreadsheet(title)
 
-    def authenticate(self):
+    def _authenticate(self):
         """Shows basic usage of the Sheets API.
         Prints values from a sample spreadsheet.
         """
@@ -39,21 +40,19 @@ class GoogleSheet:
                 pickle.dump(creds, token)
         self.creds = creds
 
-    def write_spreadsheet(self, range, values):
-        service = build('sheets', 'v4', credentials=self.creds)
+    def _write_values(self, range, values):
         # Call the Sheets API
-        sheet = service.spreadsheets()
+        sheet = self.service.spreadsheets()
         body = {
             'range': range,
             'values' : values,
         }
-        sheet.values().update(spreadsheetId=self.sheet_id,
+        sheet.values().update(spreadsheetId=self.spreadsheet_id,
                               range=range,
                               body=body, valueInputOption="RAW").execute()
 
     # def get_info():
-    #     service = build('sheets', 'v4', credentials=creds)
-    #     sheet_metadata = service.spreadsheets().get(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET).execute()
+    #     sheet_metadata = self.service.spreadsheets().get(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET).execute()
     #     sheets = sheet_metadata.get('sheets', '')
     #     # each sheet in the document contains a set of requirements of the same cathegory
     #     for s in sheets:
@@ -61,31 +60,26 @@ class GoogleSheet:
     #         title = s.get("properties", {}) #.get("sheetId", "")
     #         print(title)
 
-    def create_sheet(self, titulo):
-        service = build('sheets', 'v4', credentials=self.creds)
+    def _create_spreadsheet(self, titulo):
         body = {
             "properties": {
               "title": titulo,
             },
         }
-        request = service.spreadsheets().create(body=body)
+        request = self.service.spreadsheets().create(body=body)
         response = request.execute()
         # print(response)
-        spreadsheetId = response['spreadsheetId']
-        # print(spreadsheetId)
-        drive_service = build('drive', 'v3', credentials=self.creds)
-
-        # Retrieve the existing parents to remove
-        file = drive_service.files().get(fileId=spreadsheetId,
-                                         fields='parents').execute();
-        previous_parents = ",".join(file.get('parents'))
-        # Move the file to the new folder
-        file = drive_service.files().update(fileId=spreadsheetId,
-                                            addParents=settings.GOOGLE_FOLDER,
-                                            removeParents=previous_parents,
-                                            fields='id, parents').execute()
-        return spreadsheetId
-
+        self.spreadsheet_id = response['spreadsheetId']
+        # print(self.spreadsheet_id)
+        if settings.GOOGLE_FOLDER is not None:
+            drive_service = build('drive', 'v3', credentials=self.creds)
+            # Retrieve the existing parents to remove
+            file = drive_service.files().get(fileId=self.spreadsheet_id, fields='parents').execute()
+            previous_parents = ",".join(file.get('parents'))
+            # Move the file to the new folder
+            file = drive_service.files()\
+                .update(fileId=self.spreadsheet_id, addParents=settings.GOOGLE_FOLDER,
+                        removeParents=previous_parents, fields='id, parents').execute()
 
     def create_summary(self, projects, engineers_and_vals):
         title = "summary"
@@ -97,28 +91,27 @@ class GoogleSheet:
         values = []
         for project in projects:
             values.append([project, ])
-        self.write_spreadsheet(range, values)
+        self._write_values(range, values)
         # fill engineers and their hours
         n_engineers = len(engineers_and_vals[0])
         startLetter = "C"
         endLetter = chr(ord(startLetter) + n_engineers - 1)
         # engineers_and_vals.insert(1, [None, None, None])  # empty row to match the template (not needed any more)
         range = '{}!{}{}:{}{}'.format(title, startLetter, startRow, endLetter, end)
-        self.write_spreadsheet(range, engineers_and_vals)
+        self._write_values(range, engineers_and_vals)
 
     def get_tab_from_template(self, tab_id, title):
-        service = build('sheets', 'v4', credentials=self.creds)
         # Call the Sheets API
-        sheet = service.spreadsheets()
+        sheet = self.service.spreadsheets()
 
         copy_sheet_to_another_spreadsheet_request_body = {
             # The ID of the spreadsheet to copy the sheet to.
-            'destination_spreadsheet_id': self.sheet_id,
+            'destination_spreadsheet_id': self.spreadsheet_id,
 
             # TODO: Add desired entries to the request body.
         }
 
-        request = service.spreadsheets().sheets().copyTo(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET, sheetId=tab_id,
+        request = self.service.spreadsheets().sheets().copyTo(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET, sheetId=tab_id,
                                                          body=copy_sheet_to_another_spreadsheet_request_body)
         response = request.execute()
         # print(response)
@@ -135,12 +128,11 @@ class GoogleSheet:
                 },
             }
         }
-        service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=body).execute()
+        self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
         return new_sheetId
 
 
     def delete_sheet(self, sheet_id):
-        service = build('sheets', 'v4', credentials=self.creds)
         body = {
             "requests": {
                 "deleteSheet": {
@@ -148,4 +140,4 @@ class GoogleSheet:
                 },
             }
         }
-        service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=body).execute()
+        self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
