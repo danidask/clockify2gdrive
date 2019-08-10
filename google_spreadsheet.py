@@ -93,18 +93,21 @@ class GoogleSheet:
         return spreadsheetId
 
 
-    def create_summary(self, projects):
+    def create_summary(self, projects, engineers):
         title = "summary"
         sheetId = self.get_tab_from_template(settings.TEMPLATE_SUMARY, title)
-        start = 11
+        start = 12
         end = start + len(projects) - 1
-        range = '{}!A{}:C{}'.format(title, start, end)
+        range = '{}!A{}:B{}'.format(title, start, end)
         values = []
         for project in projects:
-            values.append([project, "", projects[project]])
+            values.append([project, projects[project]])
         print(values)
         print(range)
         self.write_spreadsheet(range, values)
+        # engineers
+        for engineer in engineers:
+            pass
 
 
 
@@ -140,3 +143,14 @@ class GoogleSheet:
         service.spreadsheets().batchUpdate(spreadsheetId=self.new_file_id, body=body).execute()
         return new_sheetId
 
+
+    def delete_sheet(self, sheetId):
+        service = build('sheets', 'v4', credentials=self.creds)
+        body = {
+            "requests": {
+                "deleteSheet": {
+                    "sheetId": sheetId,
+                },
+            }
+        }
+        service.spreadsheets().batchUpdate(spreadsheetId=self.new_file_id, body=body).execute()
