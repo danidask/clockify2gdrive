@@ -11,6 +11,7 @@ isodatetime = "*"
 google-api-python-client = "*"
 google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.6"

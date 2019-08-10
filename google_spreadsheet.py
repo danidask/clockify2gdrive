@@ -12,10 +12,10 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapi
 
 class GoogleSheet:
     def __init__(self, title):
-        self.creds = self.autentificate()
-        self.new_file_id = self.create_sheet(title)
+        self.authenticate()
+        self.sheet_id = self.create_sheet(title)
 
-    def autentificate(self):
+    def authenticate(self):
         """Shows basic usage of the Sheets API.
         Prints values from a sample spreadsheet.
         """
@@ -37,36 +37,30 @@ class GoogleSheet:
             # Save the credentials for the next run
             with open('token.pickle', 'wb') as token:
                 pickle.dump(creds, token)
-        return creds
-
+        self.creds = creds
 
     def write_spreadsheet(self, range, values):
         service = build('sheets', 'v4', credentials=self.creds)
         # Call the Sheets API
         sheet = service.spreadsheets()
         body = {
-        'range': range,
-        'values' : values,
+            'range': range,
+            'values' : values,
         }
-        sheet.values().update(spreadsheetId=self.new_file_id,
-                                    range=range,
-                                    body=body, valueInputOption="RAW").execute()
+        sheet.values().update(spreadsheetId=self.sheet_id,
+                              range=range,
+                              body=body, valueInputOption="RAW").execute()
 
-
-
-    #
     # def get_info():
     #     service = build('sheets', 'v4', credentials=creds)
-    #
-    #     sheet_metadata = service.spreadsheets().get(spreadsheetId=settings.GOOGLE_SPREADSHEET_ID).execute()
+    #     sheet_metadata = service.spreadsheets().get(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET).execute()
     #     sheets = sheet_metadata.get('sheets', '')
     #     # each sheet in the document contains a set of requirements of the same cathegory
     #     for s in sheets:
     #         # the sheet title, or name, we'll use it to name the outputs related to each sheet
     #         title = s.get("properties", {}) #.get("sheetId", "")
     #         print(title)
-    #
-    #
+
     def create_sheet(self, titulo):
         service = build('sheets', 'v4', credentials=self.creds)
         body = {
@@ -93,23 +87,24 @@ class GoogleSheet:
         return spreadsheetId
 
 
-    def create_summary(self, projects, engineers):
+    def create_summary(self, projects, engineers_and_vals):
         title = "summary"
+        startRow = 6
         sheetId = self.get_tab_from_template(settings.TEMPLATE_SUMARY, title)
-        start = 12
-        end = start + len(projects) - 1
-        range = '{}!A{}:B{}'.format(title, start, end)
+        # fill projects
+        end = startRow + 1 + len(projects) - 1
+        range = '{}!A{}:A{}'.format(title, startRow + 1, end)
         values = []
         for project in projects:
-            values.append([project, projects[project]])
-        print(values)
-        print(range)
+            values.append([project, ])
         self.write_spreadsheet(range, values)
-        # engineers
-        for engineer in engineers:
-            pass
-
-
+        # fill engineers and their hours
+        n_engineers = len(engineers_and_vals[0])
+        startLetter = "C"
+        endLetter = chr(ord(startLetter) + n_engineers - 1)
+        # engineers_and_vals.insert(1, [None, None, None])  # empty row to match the template (not needed any more)
+        range = '{}!{}{}:{}{}'.format(title, startLetter, startRow, endLetter, end)
+        self.write_spreadsheet(range, engineers_and_vals)
 
     def get_tab_from_template(self, tab_id, title):
         service = build('sheets', 'v4', credentials=self.creds)
@@ -118,12 +113,12 @@ class GoogleSheet:
 
         copy_sheet_to_another_spreadsheet_request_body = {
             # The ID of the spreadsheet to copy the sheet to.
-            'destination_spreadsheet_id': self.new_file_id,
+            'destination_spreadsheet_id': self.sheet_id,
 
             # TODO: Add desired entries to the request body.
         }
 
-        request = service.spreadsheets().sheets().copyTo(spreadsheetId=settings.GOOGLE_SPREADSHEET_ID, sheetId=tab_id,
+        request = service.spreadsheets().sheets().copyTo(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET, sheetId=tab_id,
                                                          body=copy_sheet_to_another_spreadsheet_request_body)
         response = request.execute()
         # print(response)
@@ -140,17 +135,17 @@ class GoogleSheet:
                 },
             }
         }
-        service.spreadsheets().batchUpdate(spreadsheetId=self.new_file_id, body=body).execute()
+        service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=body).execute()
         return new_sheetId
 
 
-    def delete_sheet(self, sheetId):
+    def delete_sheet(self, sheet_id):
         service = build('sheets', 'v4', credentials=self.creds)
         body = {
             "requests": {
                 "deleteSheet": {
-                    "sheetId": sheetId,
+                    "sheetId": sheet_id,
                 },
             }
         }
-        service.spreadsheets().batchUpdate(spreadsheetId=self.new_file_id, body=body).execute()
+        service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=body).execute()
