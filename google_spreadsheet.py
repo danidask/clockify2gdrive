@@ -22,7 +22,7 @@ class GoogleSheet:
         """Shows basic usage of the Sheets API.
         Prints values from a sample spreadsheet.
         """
-
+        creds = None
         # The file token.pickle stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
@@ -96,6 +96,18 @@ class GoogleSheet:
         # engineers_and_vals.insert(1, [None, None, None])  # empty row to match the template (not needed any more)
         range = '{}!{}{}:{}{}'.format(title, startLetter, start_row, endLetter, end_row)
         self._write_values(range, engineers_and_vals)
+
+    def create_project(self, project, prj_idx):
+        sheetId = self.get_tab_from_template(settings.TEMPLATE_PROJECT, project)
+        range = '{}!{}'.format(project, settings.PRJ_ROW)
+        values = [[7+prj_idx,],]
+        self._write_values(range, values)
+
+    def create_engineer(self, engineer, eng_idx):
+        sheetId = self.get_tab_from_template(settings.TEMPLATE_ENGINEER, engineer)
+        range = '{}!{}'.format(engineer, settings.ENG_ROW)
+        values = [[3+eng_idx,],]
+        self._write_values(range, values)
 
     def get_tab_from_template(self, tab_id, title):
         body = {

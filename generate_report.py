@@ -28,4 +28,10 @@ title = "timesheet {}-{}".format(year, month)
 gsh = GoogleSheet(title)
 gsh.create_summary(projects, vals)
 gsh.delete_sheet(0)  # delete default first sheet
+# create per prject sheets
+for idx, project in enumerate(projects):
+    gsh.create_project(project, idx)
+# create per engineer sheets
+for idx, engineer in enumerate(engineers):
+    gsh.create_engineer(engineer, idx)
 print("Done!")
