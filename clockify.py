@@ -56,11 +56,11 @@ def get_reports_summary(month, year):
         "taskIds": [],
         "tagIds": [],
         "billable": "BOTH",
-        "includeTimeEntries": "true",
+        "includeTimeEntries": True,
         "zoomLevel": "week",
         "description": "",
         "archived": "All",
-        "roundingOn": "false"
+        "roundingOn": False,
     }
 
     response = requests.post(url, data=json.dumps(data), headers=headers)

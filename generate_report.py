@@ -5,6 +5,7 @@ from miscellanea import get_past_month
 
 
 # clockify.get_workspaces()
+print("-> Getting clockify reports...")
 month, year = get_past_month()
 projects, engineers, registers = clockify.get_reports_summary(month, year)
 # print(projects)  # ['#5 FTclick', '#3 Modbus IO', '#1  target and dev kit']
@@ -22,7 +23,9 @@ vals = df.values.tolist()
 vals.insert(0, a)
 # print (vals)  # [['Engineer2', 'Engineer1', 'Jhon Doe'], [0, 15, 34], [10, 0, 2], [10, 5, 1]]
 
+print("-> Creating spreadsheet...")
 title = "timesheet {}-{}".format(year, month)
 gsh = GoogleSheet(title)
 gsh.create_summary(projects, vals)
 gsh.delete_sheet(0)  # delete default first sheet
+print("Done!")
