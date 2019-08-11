@@ -7,11 +7,12 @@ verify_ssl = true
 
 [packages]
 requests = "*"
-isodatetime = "*"
 google-api-python-client = "*"
 google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
 pandas = "*"
+isodatetime = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3.6"
