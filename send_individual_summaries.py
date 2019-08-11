@@ -1,5 +1,6 @@
 import settings
 from clockify import get_reports_summary
+from shabby_telegram import shabby_telegram_send
 import operator
 
 
@@ -37,11 +38,6 @@ def generate_user_report_for_telegram(engineer_registers):
     return report
 
 
-def telegram_send_user_report(report, tg_id):
-    # TODO
-    print(report)
-
-
 if __name__ == '__main__':
     engineers_registers = get_engineers_registers(7, 2019)
 
@@ -55,4 +51,4 @@ if __name__ == '__main__':
         else:
             engineer_registers.sort(key=operator.itemgetter(4), reverse=False)  # sort for date
             report = generate_user_report_for_telegram(engineer_registers)
-            telegram_send_user_report(report, tg_id)
+            shabby_telegram_send(report, tg_id)

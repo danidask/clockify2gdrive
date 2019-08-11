@@ -3,9 +3,16 @@
 CLOCKIFY_API_KEY = "xxx"
 CLOCKIFY_WORKSPACE_ID = "xxx"
 
+
 GOOGLE_FOLDER = "xxx"  # folder id to move the generated report. None to leave it in the root folder
 GOOGLE_TEMPLATE_SPREADSHEET = "xxx"
 TEMPLATE_SUMARY = "0"  # SheetId of the sumary sheet inside the template
+
+
+TELEGRAM_TOKEN = "xxx"
+telegram_users = {  # name must match clockyfy name
+    "Jhon Doe": 1111111,
+}
 
 try:
     from local_settings import *
