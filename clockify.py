@@ -15,23 +15,7 @@ headers = {
     "X-Api-Key": settings.CLOCKIFY_API_KEY,
 }
 
-# API V0 ================================================================0
-
-def get_start_end_dates(month, year):
-    startDate = datetime.datetime.strptime('{}/1/{}'.format(month, year), "%m/%d/%Y")
-    month += 1
-    if month > 12:
-        month = 1
-        year += 1
-    endDate = datetime.datetime.strptime('{}/1/{}'.format(month, year), "%m/%d/%Y")
-    endDate -= datetime.timedelta(milliseconds=1)
-    startDateStr = startDate.isoformat()+"Z"
-    endDateStr = endDate.isoformat()+"Z"
-    # 2019-07-01T00:00:00.000Z
-    # print(begin.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
-    # print(end.strftime('%Y-%m-%dT%H:%M:%S.%fZ'))
-    return startDateStr, endDateStr
-
+# API V0 ================================================================
 
 def get_workspaces():
     url = base_url_api0 + "/workspaces/"
@@ -44,14 +28,14 @@ def get_workspaces():
         print(entrada)
 
 
-def get_reports_summary(month, year):
+def get_reports_summary(start, end):
+    """ start and end -> datetime """
     url = base_url_api0 + "/workspaces/{}/reports/summary/".format(settings.CLOCKIFY_WORKSPACE_ID)
-    startDate, endDate = get_start_end_dates(month, year)
     data = {
         # "startDate":"2019-07-01T00:00:00.000Z",
         # "endDate": "2019-07-31T23:59:59.999Z",
-        "startDate": startDate,
-        "endDate": endDate,
+        "startDate": start.isoformat()+"Z",
+        "endDate": end.isoformat()+"Z",
         "me": "TEAM",
         "userGroupIds": [],
         "userIds": [],
@@ -74,10 +58,15 @@ def get_reports_summary(month, year):
     projects = set()
     engineers = set()
     registers = []
+    # print(rjs)
+
     for entry in rjs['timeEntries']:
         username = entry['user']['name']
         description = entry['description']
-        project = entry['project']['name']
+        try:
+            project = entry['project']['name']
+        except TypeError:  #  TypeError: 'NoneType' object is not subscriptable
+            project = "Unknown"
         duration = hours_from_duration(entry['timeInterval']['duration'])
         date = entry['timeInterval']['start']  # 2019-07-18T09:06:00Z
         date = dateutil.parser.parse(date)  # datetime

@@ -2,10 +2,12 @@ import settings
 from clockify import get_reports_summary
 from shabby_telegram import shabby_telegram_send
 import operator
+import sys
+import datetime
 
 
-def get_engineers_registers(month, year):
-    projects, engineers, registers = get_reports_summary(month, year)
+def get_engineers_registers(start, end):
+    projects, engineers, registers = get_reports_summary(start, end)
     engineers_registers = {}
     for register in registers:
         project = register[0]
@@ -39,8 +41,13 @@ def generate_user_report_for_telegram(engineer_registers):
 
 
 if __name__ == '__main__':
-    engineers_registers = get_engineers_registers(7, 2019)
-
+    """ number of days as first argument """
+    n_days = 6
+    if len(sys.argv) == 2:
+        n_days = int(sys.argv[1])
+    end = datetime.datetime.now()
+    start = end - datetime.timedelta(days=n_days)
+    engineers_registers = get_engineers_registers(start, end)
     for engineer in engineers_registers.keys():
         # print(engineer)  # Jhon Doe
         engineer_registers = engineers_registers[engineer]
@@ -51,4 +58,5 @@ if __name__ == '__main__':
         else:
             engineer_registers.sort(key=operator.itemgetter(4), reverse=False)  # sort for date
             report = generate_user_report_for_telegram(engineer_registers)
+            report += " in the past {} days".format(n_days)
             shabby_telegram_send(report, tg_id)
