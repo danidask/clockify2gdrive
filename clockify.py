@@ -4,15 +4,18 @@ import requests
 import settings
 import dateutil.parser
 import isodatetime.parsers as isoparse  # https://pypi.org/project/isodatetime/
+import pytz
 
 
 base_url_api0 = "https://api.clockify.me/api"
+base_url_api1 = "https://api.clockify.me/api/v1"
 
 headers = {
     "content-type": "application/json",
     "X-Api-Key": settings.CLOCKIFY_API_KEY,
 }
 
+# API V0 ================================================================0
 
 def get_start_end_dates(month, year):
     startDate = datetime.datetime.strptime('{}/1/{}'.format(month, year), "%m/%d/%Y")
@@ -98,6 +101,39 @@ def get_engineers_ids():
         if entry['status'] == "ACTIVE":
             engineers[entry['name']] = entry['id']
     return engineers  # {'Jhon Doe': '5c928a86536955400', 'Engineer1': '5d4d39c24e80e', 'Engineer2': '5d4d21663e2139'}
+
+# API V1 ================================================================0
+
+def get_users():
+    url = base_url_api1 + "/workspace/{}/users".format(settings.CLOCKIFY_WORKSPACE_ID)
+    response = requests.get(url, headers=headers)
+    response.encoding = 'utf-8'
+    # print(response.text)
+    rjs = response.json()
+    users = {}
+    for entry in rjs:
+        id = entry['id']
+        name = entry['name']
+        users[name] = id
+    return users
+
+
+def get_running_clock_user(userid):
+    url = base_url_api1 + "/workspaces/{}/user/{}/time-entries".format(settings.CLOCKIFY_WORKSPACE_ID, userid)
+    response = requests.get(url, headers=headers)
+    response.encoding = 'utf-8'
+    # print(response.text)
+    entries = response.json()
+    for entry in entries:
+        if entry['timeInterval']['end'] is None:  # clock active
+            start = entry['timeInterval']['start']  # 2019-08-12T16:46:14Z
+            start = dateutil.parser.parse(start)
+            now = datetime.datetime.now(pytz.timezone('UTC'))
+            time = now - start
+            if time > datetime.timedelta(hours=settings.RUNNING_CLOCK_ALERT):
+                return "You have a clock running for {} hours. Please save your work more often"\
+                    .format(time.seconds//3600)
+    return None
 
 
 def hours_from_duration(pt):

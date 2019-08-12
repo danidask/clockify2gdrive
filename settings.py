@@ -7,15 +7,17 @@ CLOCKIFY_WORKSPACE_ID = "xxx"
 GOOGLE_FOLDER = "xxx"  # folder id to move the generated report. None to leave it in the root folder
 GOOGLE_TEMPLATE_SPREADSHEET = "xxx"
 TEMPLATE_SUMARY = "0"  # SheetId of the sumary sheet inside the template
-TEMPLATE_PROJECT = "188756417"  # SheetId of the project_template sheet inside the template
-TEMPLATE_ENGINEER = "1966447886"  # SheetId of the engineer_template sheet inside the template
-PRJ_ROW = "G5"
-ENG_ROW = "G5"
+TEMPLATE_PROJECT = "0"  # SheetId of the project_template sheet inside the template
+TEMPLATE_ENGINEER = "0"  # SheetId of the engineer_template sheet inside the template
+PRJ_ROW = "A1"
+ENG_ROW = "A1"
 
 TELEGRAM_TOKEN = "xxx"
 telegram_users = {  # name must match clockyfy name
     "Jhon Doe": 1111111,
 }
+
+RUNNING_CLOCK_ALERT = 2  # number or hours to trigger the alert
 
 try:
     from local_settings import *
