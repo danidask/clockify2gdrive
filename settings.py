@@ -7,7 +7,10 @@ CLOCKIFY_WORKSPACE_ID = "xxx"
 GOOGLE_FOLDER = "xxx"  # folder id to move the generated report. None to leave it in the root folder
 GOOGLE_TEMPLATE_SPREADSHEET = "xxx"
 TEMPLATE_SUMARY = "0"  # SheetId of the sumary sheet inside the template
-
+TEMPLATE_PROJECT = "188756417"  # SheetId of the project_template sheet inside the template
+TEMPLATE_ENGINEER = "1966447886"  # SheetId of the engineer_template sheet inside the template
+PRJ_ROW = "G5"
+ENG_ROW = "G5"
 
 TELEGRAM_TOKEN = "xxx"
 telegram_users = {  # name must match clockyfy name
