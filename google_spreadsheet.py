@@ -79,7 +79,7 @@ class GoogleSheet:
                         removeParents=previous_parents, fields='id, parents').execute()
 
     def create_summary(self, projects, engineers_and_vals):
-        title = "summary"
+        title = "Summary"
         start_row = 6
         sheetId = self.get_tab_from_template(settings.TEMPLATE_SUMARY, title)
         # fill projects
@@ -96,18 +96,114 @@ class GoogleSheet:
         # engineers_and_vals.insert(1, [None, None, None])  # empty row to match the template (not needed any more)
         range = '{}!{}{}:{}{}'.format(title, startLetter, start_row, endLetter, end_row)
         self._write_values(range, engineers_and_vals)
+        # hide empty rows and columns
+        requests = []
+        requests.append({"setBasicFilter": {
+                            "filter": {
+                                "range": {
+                                    "sheetId": sheetId,
+                                    "startRowIndex": 5,
+                                    "endRowIndex": 18,
+                                    "startColumnIndex": 0,
+                                    "endColumnIndex": 12
+                                },
+                                "criteria": {
+                                    "0" : {
+                                        "condition": {
+                                            "type": "NOT_BLANK",
+                                        }
+                                    }
+                                }
+                            }
+                        }})
+        requests.append({'updateDimensionProperties': {
+                            "range": {
+                                "sheetId": sheetId,
+                                "dimension": 'COLUMNS',
+                                "startIndex": n_engineers + 2,
+                                "endIndex": 12,
+                            },
+                            "properties": {
+                                "hiddenByUser": True,
+                            },
+                            "fields": 'hiddenByUser',
+                        }})
+        body = {'requests': requests}
+        self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
 
     def create_project(self, project, prj_idx):
         sheetId = self.get_tab_from_template(settings.TEMPLATE_PROJECT, project)
         range = '{}!{}'.format(project, settings.PRJ_ROW)
         values = [[7+prj_idx,],]
         self._write_values(range, values)
+        # hide 0 hours entries
+        body = {
+            "requests": {
+                "setBasicFilter": {
+                    "filter": {
+                        "range": {
+                            "sheetId": sheetId,
+                            "startRowIndex": 9,
+                            "endRowIndex": 20,
+                            "startColumnIndex": 0,
+                            "endColumnIndex": 4
+                        },
+                        "sortSpecs": [
+                        {
+                            "dimensionIndex": 2,
+                            "sortOrder": "DESCENDING"
+                        }
+                        ],
+                        "criteria": {
+                            "2" : {
+                                "condition": {
+                                    "type": "NUMBER_GREATER",
+                                    "values": [ {"userEnteredValue": "0"}, ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
 
     def create_engineer(self, engineer, eng_idx):
         sheetId = self.get_tab_from_template(settings.TEMPLATE_ENGINEER, engineer)
         range = '{}!{}'.format(engineer, settings.ENG_ROW)
         values = [[3+eng_idx,],]
         self._write_values(range, values)
+        # hide 0 hours entries
+        body = {
+            "requests": {
+                "setBasicFilter": {
+                    "filter": {
+                        "range": {
+                            "sheetId": sheetId,
+                            "startRowIndex": 9,
+                            "endRowIndex": 22,
+                            "startColumnIndex": 0,
+                            "endColumnIndex": 4
+                        },
+                        "sortSpecs": [
+                        {
+                            "dimensionIndex": 2,
+                            "sortOrder": "DESCENDING"
+                        }
+                        ],
+                        "criteria": {
+                            "2" : {
+                                "condition": {
+                                    "type": "NUMBER_GREATER",
+                                    "values": [ {"userEnteredValue": "0"}, ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
 
     def get_tab_from_template(self, tab_id, title):
         body = {
