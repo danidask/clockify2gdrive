@@ -130,4 +130,4 @@ def get_running_clock_user(userid):
 
 def hours_from_duration(pt):
     duration = isoparse.DurationParser().parse(pt)
-    return round(duration.get_seconds()//3600)
+    return duration.get_seconds()/3600

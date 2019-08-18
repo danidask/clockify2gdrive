@@ -15,7 +15,7 @@ projects, engineers, registers = clockify.get_reports_summary(start, end)
 # prepare the values using a pandas table
 projects.sort()
 engineers.sort()
-df = pd.DataFrame(0, index=projects, columns=engineers)
+df = pd.DataFrame(0, index=projects, columns=engineers, dtype='float')
 for register in registers:
     df.at[register[0], register[1]] += register[2]
 a = df.columns.values.tolist()
