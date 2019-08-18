@@ -5,7 +5,6 @@ from google.auth.transport.requests import Request
 import settings
 import os
 
-
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file']
 
@@ -45,10 +44,10 @@ class GoogleSheet:
     def _write_values(self, range, values):
         body = {
             'range': range,
-            'values' : values,
+            'values': values,
         }
         self.sheet.values().update(spreadsheetId=self.spreadsheet_id, range=range,
-                              body=body, valueInputOption="RAW").execute()
+                                   body=body, valueInputOption="RAW").execute()
 
     # def get_info():
     #     sheet_metadata = self.sheet.get(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET).execute()
@@ -62,7 +61,7 @@ class GoogleSheet:
     def _create_spreadsheet(self, titulo):
         body = {
             "properties": {
-              "title": titulo,
+                "title": titulo,
             },
         }
         response = self.sheet.create(body=body).execute()
@@ -74,9 +73,8 @@ class GoogleSheet:
             file = drive_service.files().get(fileId=self.spreadsheet_id, fields='parents').execute()
             previous_parents = ",".join(file.get('parents'))
             # Add the new folder and remove the old ones
-            file = drive_service.files()\
-                .update(fileId=self.spreadsheet_id, addParents=settings.GOOGLE_FOLDER,
-                        removeParents=previous_parents, fields='id, parents').execute()
+            drive_service.files().update(fileId=self.spreadsheet_id, addParents=settings.GOOGLE_FOLDER,
+                                         removeParents=previous_parents, fields='id, parents').execute()
 
     def create_summary(self, projects, engineers_and_vals):
         title = "Summary"
@@ -99,118 +97,58 @@ class GoogleSheet:
         # hide empty rows and columns
         requests = []
         requests.append({"setBasicFilter": {
-                            "filter": {
-                                "range": {
-                                    "sheetId": sheetId,
-                                    "startRowIndex": 5,
-                                    "endRowIndex": 18,
-                                    "startColumnIndex": 0,
-                                    "endColumnIndex": 12
-                                },
-                                "criteria": {
-                                    "0" : {
-                                        "condition": {
-                                            "type": "NOT_BLANK",
-                                        }
-                                    }
-                                }
-                            }
-                        }})
+            "filter": {
+                "range": {
+                    "sheetId": sheetId,
+                    "startRowIndex": 5,
+                    "endRowIndex": 18,
+                    "startColumnIndex": 0,
+                    "endColumnIndex": 12
+                },
+                "criteria": {
+                    "0": {
+                        "condition": {
+                            "type": "NOT_BLANK",
+                        }
+                    }
+                }
+            }
+        }})
         requests.append({'updateDimensionProperties': {
-                            "range": {
-                                "sheetId": sheetId,
-                                "dimension": 'COLUMNS',
-                                "startIndex": n_engineers + 2,
-                                "endIndex": 12,
-                            },
-                            "properties": {
-                                "hiddenByUser": True,
-                            },
-                            "fields": 'hiddenByUser',
-                        }})
+            "range": {
+                "sheetId": sheetId,
+                "dimension": 'COLUMNS',
+                "startIndex": n_engineers + 2,
+                "endIndex": 12,
+            },
+            "properties": {
+                "hiddenByUser": True,
+            },
+            "fields": 'hiddenByUser',
+        }})
         body = {'requests': requests}
         self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
 
     def create_project(self, project, prj_idx):
         sheetId = self.get_tab_from_template(settings.TEMPLATE_PROJECT, project)
         range = '{}!{}'.format(project, settings.PRJ_ROW)
-        values = [[7+prj_idx,],]
+        values = [[7 + prj_idx, ], ]
         self._write_values(range, values)
-        # hide 0 hours entries
-        body = {
-            "requests": {
-                "setBasicFilter": {
-                    "filter": {
-                        "range": {
-                            "sheetId": sheetId,
-                            "startRowIndex": 9,
-                            "endRowIndex": 20,
-                            "startColumnIndex": 0,
-                            "endColumnIndex": 4
-                        },
-                        "sortSpecs": [
-                        {
-                            "dimensionIndex": 2,
-                            "sortOrder": "DESCENDING"
-                        }
-                        ],
-                        "criteria": {
-                            "2" : {
-                                "condition": {
-                                    "type": "NUMBER_GREATER",
-                                    "values": [ {"userEnteredValue": "0"}, ]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
+        self.hide_0_hours_entries(sheetId, 9, 20, 0, 4)
 
     def create_engineer(self, engineer, eng_idx):
         sheetId = self.get_tab_from_template(settings.TEMPLATE_ENGINEER, engineer)
         range = '{}!{}'.format(engineer, settings.ENG_ROW)
-        values = [[3+eng_idx,],]
+        values = [[3 + eng_idx, ], ]
         self._write_values(range, values)
-        # hide 0 hours entries
-        body = {
-            "requests": {
-                "setBasicFilter": {
-                    "filter": {
-                        "range": {
-                            "sheetId": sheetId,
-                            "startRowIndex": 9,
-                            "endRowIndex": 22,
-                            "startColumnIndex": 0,
-                            "endColumnIndex": 4
-                        },
-                        "sortSpecs": [
-                        {
-                            "dimensionIndex": 2,
-                            "sortOrder": "DESCENDING"
-                        }
-                        ],
-                        "criteria": {
-                            "2" : {
-                                "condition": {
-                                    "type": "NUMBER_GREATER",
-                                    "values": [ {"userEnteredValue": "0"}, ]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
+        self.hide_0_hours_entries(sheetId, 9, 22, 0, 4)
 
     def get_tab_from_template(self, tab_id, title):
         body = {
             'destination_spreadsheet_id': self.spreadsheet_id,  # The ID of the spreadsheet to copy the sheet to.
         }
         response = self.sheet.sheets().copyTo(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET,
-                                             sheetId=tab_id, body=body).execute()
+                                              sheetId=tab_id, body=body).execute()
         # print(response)
         new_sheetId = response['sheetId']
         # RENAME
@@ -228,13 +166,44 @@ class GoogleSheet:
         self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
         return new_sheetId
 
-
     def delete_sheet(self, sheet_id):
         body = {
             "requests": {
                 "deleteSheet": {
                     "sheetId": sheet_id,
                 },
+            }
+        }
+        self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
+
+    def hide_0_hours_entries(self, sheetId, startRowIndex, endRowIndex, startColumnIndex, endColumnIndex):
+        body = {
+            "requests": {
+                "setBasicFilter": {
+                    "filter": {
+                        "range": {
+                            "sheetId": sheetId,
+                            "startRowIndex": startRowIndex,
+                            "endRowIndex": endRowIndex,
+                            "startColumnIndex": startColumnIndex,
+                            "endColumnIndex": endColumnIndex,
+                        },
+                        "sortSpecs": [
+                            {
+                                "dimensionIndex": 2,
+                                "sortOrder": "DESCENDING"
+                            }
+                        ],
+                        "criteria": {
+                            "2": {
+                                "condition": {
+                                    "type": "NUMBER_GREATER",
+                                    "values": [{"userEnteredValue": "0"}, ]
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()

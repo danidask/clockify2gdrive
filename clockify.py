@@ -63,13 +63,16 @@ def get_reports_summary(start, end):
     for entry in rjs['timeEntries']:
         username = entry['user']['name']
         description = entry['description']
-        try:
-            project = entry['project']['name']
-        except TypeError:  #  TypeError: 'NoneType' object is not subscriptable
-            project = "Unknown"
-        duration = hours_from_duration(entry['timeInterval']['duration'])
+
         date = entry['timeInterval']['start']  # 2019-07-18T09:06:00Z
         date = dateutil.parser.parse(date)  # datetime
+        duration = hours_from_duration(entry['timeInterval']['duration'])
+        if not isinstance(duration, int):
+            continue  # duration is None when the clock is running, so ignore it
+        try:
+            project = entry['project']['name']
+        except TypeError: #  TypeError: 'NoneType' object is not subscriptable
+            continue
         # print("Description: {}\tUser: {}\tProject: {}\tDuration: {}h"
         #       .format(description, username, project, duration))
         # print(entry)
@@ -91,7 +94,7 @@ def get_engineers_ids():
             engineers[entry['name']] = entry['id']
     return engineers  # {'Jhon Doe': '5c928a86536955400', 'Engineer1': '5d4d39c24e80e', 'Engineer2': '5d4d21663e2139'}
 
-# API V1 ================================================================0
+# API V1 ================================================================
 
 def get_users():
     url = base_url_api1 + "/workspace/{}/users".format(settings.CLOCKIFY_WORKSPACE_ID)
@@ -101,9 +104,9 @@ def get_users():
     rjs = response.json()
     users = {}
     for entry in rjs:
-        id = entry['id']
+        user_id = entry['id']
         name = entry['name']
-        users[name] = id
+        users[name] = user_id
     return users
 
 
