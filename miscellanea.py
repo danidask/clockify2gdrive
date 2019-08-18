@@ -18,4 +18,4 @@ def get_past_month_start_end():
 def get_past_month_str():
     now = datetime.datetime.now()
     past_month = now - datetime.timedelta(days=28)
-    print(past_month.strftime("%Y-%m"))
+    return past_month.strftime("%Y-%m")
