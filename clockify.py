@@ -58,16 +58,18 @@ def get_reports_summary(start, end):
     projects = set()
     engineers = set()
     registers = []
-    # print(rjs)
+    # print(json.dumps(rjs, indent=4, sort_keys=True))
 
     for entry in rjs['timeEntries']:
         username = entry['user']['name']
         description = entry['description']
+        # print(entry)
 
         date = entry['timeInterval']['start']  # 2019-07-18T09:06:00Z
         date = dateutil.parser.parse(date)  # datetime
+        enddate = dateutil.parser.parse(entry['timeInterval']['end'])
         duration = hours_from_duration(entry['timeInterval']['duration'])
-        if not isinstance(duration, int):
+        if not isinstance(duration, float):
             continue  # duration is None when the clock is running, so ignore it
         try:
             project = entry['project']['name']
@@ -75,10 +77,9 @@ def get_reports_summary(start, end):
             continue
         # print("Description: {}\tUser: {}\tProject: {}\tDuration: {}h"
         #       .format(description, username, project, duration))
-        # print(entry)
         projects.add(project)
         engineers.add(username)
-        registers.append((project, username, duration, description, date))
+        registers.append((project, username, duration, description, date, enddate))
     return list(projects), list(engineers), registers
 
 
