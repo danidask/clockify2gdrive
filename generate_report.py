@@ -53,13 +53,14 @@ for project in projects:
 
 #print(df_all)
 #df_all.to_pickle("hours.pkl")
+# --------------- generate detailed projects timesheets ----------
 for project in projects:
     print('----------------------',project,'----------------------')
     print(project_entries[project])
     names = project_entries[project].index.tolist()
     hours = project_entries[project].values.tolist()
     prj_regs = list(zip(names, hours))
-    title = "timesheet {} {}".format(get_past_month_str(), project)
+    title = "timesheet {} {}".format(period, project)
     gsh = GoogleSheet(title)
     # summary per engineer and total
     print(prj_regs)
@@ -67,22 +68,22 @@ for project in projects:
     gsh.delete_sheet(0)  # delete default first sheet
     # details per engineer and day
     for engineer in engineers:
-        if (df.loc[project, engineer] > 0) and (engineer not in settings.prorated_users):
+        if (df.loc[project, engineer] > 0):
             print(engineer)
-            user_entries = df_all[(df_all['project']==project) & (df_all['username']==engineer)]
-            #print(user_entries)
-            day_entries = user_entries.groupby(pd.Grouper(key='date', freq='1D'))['username', 'description', 'duration'].agg({'duration' : sum, 'username' : 'last', 'description' : lambda tags: '\n'.join(set(tags))})
-            #print(day_entries)
-            worked_days = day_entries[day_entries['duration'] > 0.0]
-            worked_days['day'] = worked_days.index.strftime('%Y-%m-%d')
-            worked_days = worked_days.reindex(columns=['username', 'day', 'description', 'duration'])
-            #print(worked_days)
-            header = worked_days.columns.tolist()
-            eng_regs = worked_days.values.tolist()
-            #eng_regs.insert(0, header)
-            print(eng_regs)
-            gsh.append_engineer_details(project, engineer, eng_regs)
-            #row += len(eng_regs) + 1
+            if (engineer not in settings.prorated_users):
+                user_entries = df_all[(df_all['project']==project) & (df_all['username']==engineer)]
+                #print(user_entries)
+                day_entries = user_entries.groupby(pd.Grouper(key='date', freq='1D'))['username', 'description', 'duration'].agg({'duration' : sum, 'username' : 'last', 'description' : lambda tags: '\n'.join(set(tags))})
+                #print(day_entries)
+                worked_days = day_entries[day_entries['duration'] > 0.0]
+                worked_days['day'] = worked_days.index.strftime('%Y-%m-%d')
+                worked_days = worked_days.reindex(columns=['username', 'day', 'description', 'duration'])
+                #print(worked_days)
+                header = worked_days.columns.tolist()
+                eng_regs = worked_days.values.tolist()
+                print(eng_regs)
+                gsh.append_engineer_details(project, engineer, eng_regs)
+            time.sleep(1)
     gsh.append_project_summary(project, prj_regs)
     gsh.generatePDF()
 
