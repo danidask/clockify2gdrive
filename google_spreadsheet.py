@@ -2,6 +2,8 @@ import pickle
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from apiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
+import io
 import settings
 import os
 
@@ -16,6 +18,7 @@ class GoogleSheet:
         service = build('sheets', 'v4', credentials=self.creds)
         self.sheet = service.spreadsheets()
         self._create_spreadsheet(title)
+        self.title = title
 
     def _authenticate(self):
         """Shows basic usage of the Sheets API.
@@ -48,6 +51,14 @@ class GoogleSheet:
         }
         self.sheet.values().update(spreadsheetId=self.spreadsheet_id, range=range,
                                    body=body, valueInputOption="RAW").execute()
+
+    def _append_values(self, range, values):
+        body = {
+            'range': range,
+            'values': values,
+        }
+        self.sheet.values().append(spreadsheetId=self.spreadsheet_id, range=range,
+                                   body=body, valueInputOption="RAW", insertDataOption="INSERT_ROWS").execute()
 
     # def get_info():
     #     sheet_metadata = self.sheet.get(spreadsheetId=settings.GOOGLE_TEMPLATE_SPREADSHEET).execute()
@@ -129,12 +140,19 @@ class GoogleSheet:
         body = {'requests': requests}
         self.sheet.batchUpdate(spreadsheetId=self.spreadsheet_id, body=body).execute()
 
-    def create_project(self, project, prj_idx):
+    def create_project(self, project, prj_idx, registers):
         sheetId = self.get_tab_from_template(settings.TEMPLATE_PROJECT, project)
         range = '{}!{}'.format(project, settings.PRJ_ROW)
         values = [[7 + prj_idx, ], ]
         self._write_values(range, values)
         self.hide_0_hours_entries(sheetId, 9, 20, 0, 4)
+
+        startLetter = "A"
+        endLetter = "C"
+        range = '{}!{}{}:{}{}'.format(project, startLetter, 30, endLetter, 30 + len(registers))
+        print(range)
+        self._write_values(range, registers)
+
 
     def create_engineer(self, engineer, eng_idx):
         sheetId = self.get_tab_from_template(settings.TEMPLATE_ENGINEER, engineer)
@@ -142,6 +160,49 @@ class GoogleSheet:
         values = [[3 + eng_idx, ], ]
         self._write_values(range, values)
         self.hide_0_hours_entries(sheetId, 9, 22, 0, 4)
+
+    def create_detailed_project(self, project, period):
+        sheetId = self.get_tab_from_template(settings.TEMPLATE_DETAILED_PROJECT , project)
+        range = '{}!{}'.format(project, settings.PRJ_CELL)
+        self._write_values(range, [[project,],])
+        range = '{}!{}'.format(project, settings.DATE_CELL)
+        self._write_values(range, [[period,],])
+
+    def append_project_summary(self, project, prj_regs):
+        startLetter = "A"
+        endLetter = "B"
+        summary_row = 9
+        range = '{}!{}{}:{}'.format(project, startLetter, summary_row, endLetter)
+        range = 'A9'
+        print(range)
+        self._append_values(range, prj_regs)
+
+    def append_engineer_details(self, project, engineer, worked_days):
+        row = 15
+        startLetter = "A"
+        endLetter = "D"
+        range = '{}!{}{}:{}'.format(project, startLetter, row, endLetter)
+        print(range)
+        self._append_values(range, worked_days)
+
+    def generatePDF(self):
+        drive_service = build('drive', 'v3', credentials=self.creds)
+        request = drive_service.files().export_media(fileId=self.spreadsheet_id,
+                                                     mimeType='application/pdf')
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+            print("Download %d%%." % int(status.progress() * 100))
+
+        file_metadata = {'name': self.title + '.pdf', 'parents' : [settings.GOOGLE_FOLDER,] }
+        media = MediaIoBaseUpload(fh, mimetype='application/pdf')
+        file = drive_service.files().create(body=file_metadata,
+                                            media_body=media,
+                                            fields='id').execute()
+        print('File ID: %s' % file.get('id'))
+
 
     def get_tab_from_template(self, tab_id, title):
         body = {

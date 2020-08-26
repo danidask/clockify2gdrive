@@ -9,8 +9,14 @@ GOOGLE_TEMPLATE_SPREADSHEET = "xxx"
 TEMPLATE_SUMARY = "0"  # SheetId of the sumary sheet inside the template
 TEMPLATE_PROJECT = "0"  # SheetId of the project_template sheet inside the template
 TEMPLATE_ENGINEER = "0"  # SheetId of the engineer_template sheet inside the template
+TEMPLATE_DETAILED_PROJECT = "0" # SheetId of the detailed template
+PRJ_CELL = "A1"
+DATE_CELL = "A1"
 PRJ_ROW = "A1"
 ENG_ROW = "A1"
+
+prorated_users = ['Jhon Doe',]
+prorated_projects = ['Support project',]
 
 TELEGRAM_TOKEN = "xxx"
 telegram_users = {  # name must match clockyfy name
