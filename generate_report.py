@@ -1,8 +1,10 @@
 import clockify
 from google_spreadsheet import GoogleSheet
 import pandas as pd
+import time
 from miscellanea import get_past_month_start_end, get_past_month_str
 import settings
+
 
 # clockify.get_workspaces()
 print("-> Getting clockify reports...")
@@ -25,8 +27,7 @@ a = df.columns.values.tolist()
 vals = df.values.tolist()
 vals.insert(0, a)
 #print (vals)  # [['Engineer2', 'Engineer1', 'Jhon Doe'], [0, 15, 34], [10, 0, 2], [10, 5, 1]]
-
-df_all = pd.DataFrame(registers, columns=('project', 'username', 'duration', 'description', 'date', 'end'))
+df_all = pd.DataFrame(registers, columns=('project', 'username', 'duration', 'description', 'date'))  # , 'end'
 print(projects)
 project_entries = df_all.groupby(['project', 'username'])['duration'].sum()
 print(project_entries)
