@@ -63,6 +63,9 @@ def get_reports_summary(start, end):
     # print(response.text)
     rjs = response.json()
     # print(rjs)
+    # with open("reports_summary_temp.json", 'w') as f:
+        # json.dump(rjs, f, indent=4)
+    # quit(0)
     projects = set()
     engineers = set()
     registers = []
@@ -72,9 +75,10 @@ def get_reports_summary(start, end):
         date = entry['timeInterval']['start']  # 2019-07-18T09:06:00Z
         date = dateutil.parser.parse(date)  # datetime
         # duration = hours_from_duration(entry['timeInterval']['duration'])
-        duration = entry['timeInterval']['duration'] // 3600
-        if not isinstance(duration, int):
+        duration = entry['timeInterval']['duration']  # came in seconds
+        if not duration:
             continue  # duration is None when the clock is running, so ignore it
+        duration /= 3600  # from seconds to hours
         project = entry['projectName']
         print("Description: {}\tUser: {}\tProject: {}\tDuration: {}h"
               .format(description, username, project, duration))
