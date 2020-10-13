@@ -66,12 +66,14 @@ def get_reports_summary(start, end):
     # with open("reports_summary_temp.json", 'w') as f:
         # json.dump(rjs, f, indent=4)
     # quit(0)
+    if int(rjs['totals'][0]['entriesCount']) >=200:
+        raise Exception("The current script doesnt support more than 200 entries") 
     projects = set()
     engineers = set()
     registers = []
     for entry in rjs['timeentries']:
         username = entry['userName']
-        description = entry['description']
+        description = entry['description'] if entry['description'] else "(no description)"
         date = entry['timeInterval']['start']  # 2019-07-18T09:06:00Z
         date = dateutil.parser.parse(date)  # datetime
         # duration = hours_from_duration(entry['timeInterval']['duration'])
